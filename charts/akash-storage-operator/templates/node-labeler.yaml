@@ -1,0 +1,128 @@
+{{- if .Values.nodeLabeler.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator-storage-node-labeler
+  namespace: akash-services
+  labels:
+    akash.network: "true"
+    app.kubernetes.io/name: storage
+    app.kubernetes.io/instance: storage-node-labeler
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: provider
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: akash-operator-storage-node-labeler
+  labels:
+    akash.network: "true"
+    app.kubernetes.io/name: storage
+    app.kubernetes.io/instance: storage-node-labeler
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: provider
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: operator-storage-node-labeler
+  labels:
+    akash.network: "true"
+    app.kubernetes.io/name: storage
+    app.kubernetes.io/instance: storage-node-labeler
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: provider
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: akash-operator-storage-node-labeler
+subjects:
+  - kind: ServiceAccount
+    name: operator-storage-node-labeler
+    namespace: akash-services
+---
+# appends the -retain classes to the akash.network/storageclasses node label
+# (dot-separated list, the akash-nodes convention)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: operator-storage-node-labeler
+  namespace: akash-services
+  labels:
+    akash.network: "true"
+    app.kubernetes.io/name: storage
+    app.kubernetes.io/instance: storage-node-labeler
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: provider
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: storage
+        app.kubernetes.io/instance: storage-node-labeler
+        app.kubernetes.io/component: operator
+        app.kubernetes.io/part-of: provider
+    spec:
+      serviceAccountName: operator-storage-node-labeler
+      restartPolicy: OnFailure
+      containers:
+        - name: node-labeler
+          image: {{ .Values.nodeLabeler.image | quote }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+
+              RETAIN_CLASSES="{{ range $i, $c := .Values.storageClasses.classes }}{{ if $i }} {{ end }}{{ $c.name }}-retain{{ end }}"
+
+              for node in $(kubectl get nodes -o name); do
+                current="$(kubectl get "${node}" -o jsonpath='{.metadata.labels.akash\.network/storageclasses}')"
+
+                updated="${current}"
+                for class in ${RETAIN_CLASSES}; do
+                  case ".${updated}." in
+                    *".${class}."*) ;;
+                    *)
+                      if [ -z "${updated}" ]; then
+                        updated="${class}"
+                      else
+                        updated="${updated}.${class}"
+                      fi
+                      ;;
+                  esac
+                done
+
+                if [ "${updated}" != "${current}" ]; then
+                  echo "labeling ${node}: akash.network/storageclasses=${updated}"
+                  kubectl label --overwrite "${node}" "akash.network/storageclasses=${updated}"
+                fi
+              done
+{{- end }}

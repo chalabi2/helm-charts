@@ -1,0 +1,48 @@
+# Default values for akash-storage-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: ghcr.io/akash-network/provider
+  pullPolicy: IfNotPresent
+
+# bech32 address of the provider this operator serves
+provider_address:
+
+# RPC endpoint of an akash node; the operator watches volume lifecycle
+# events and verifies adoptions against chain state through it
+node: "http://akash-node-1:26657"
+
+# namespace parked volume holder PVCs live in; every parked or retained
+# volume keeps a claim here so its Retain PV is never left Available
+volumes_namespace: akash-volumes
+
+# full reconcile sweep interval (fires GC deadlines with no event traffic)
+resync_interval: "300s"
+
+# Retain-policy StorageClass twins installed for the volume market. Every
+# PV backing a volume group is created against <name>-retain; the AEP-15
+# per-lease Delete classes are untouched. Pools/parameters mirror the
+# regular akash deployment classes.
+storageClasses:
+  provisioner: rook-ceph.rbd.csi.ceph.com
+  clusterID: rook-ceph
+  classes:
+    - name: beta1
+      pool: akash-deployments
+    - name: beta2
+      pool: akash-deployments
+    - name: beta3
+      pool: akash-deployments
+
+# appends the -retain classes to the akash.network/storageclasses node
+# label after install/upgrade
+nodeLabeler:
+  enabled: true
+  image: bitnami/kubectl:1.31
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

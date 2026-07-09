@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-storage
+  namespace: akash-services
+data:
+  provider-address: {{ .Values.provider_address | default "" | quote }}
+  node: {{ .Values.node | quote }}
+  k8s-manifest-ns: "lease"
+  volumes-namespace: {{ .Values.volumes_namespace | quote }}
+  resync-interval: {{ .Values.resync_interval | quote }}

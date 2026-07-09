@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.volumes_namespace }}
+  # DO NOT REMOVE resource-policy annotation! Parked and retained volume
+  # holder PVCs live here; deleting the namespace releases every Retain PV.
+  annotations:
+    "helm.sh/resource-policy": keep
+  labels:
+    akash.network: "true"
+    akash.network/component: volume
