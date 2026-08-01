@@ -88,4 +88,12 @@ data:
   AKASH_ATTESTATION_SIDECAR_IMAGE: "{{ .Values.attestation.sidecarImage.repository }}:{{ .Values.attestation.sidecarImage.tag | default .Chart.AppVersion }}"
   AKASH_ATTESTATION_WEBHOOK_PORT: "{{ .Values.attestation.webhookPort | default 9443 }}"
   {{- end }}
-
+  {{- if .Values.confidentialPersistence.enabled }}
+  # Confidential persistent storage
+  AKASH_CC_PERSISTENCE_KBS_URL: {{ required "confidentialPersistence.kbsURL is required when confidential persistence is enabled" .Values.confidentialPersistence.kbsURL | quote }}
+  AKASH_CC_PERSISTENCE_MASTER_KEY_FILE: "/etc/akash-provider/confidential-persistence/master-key"
+  AKASH_CC_PERSISTENCE_KBS_ADMIN_TOKEN_FILE: "/etc/akash-provider/confidential-persistence/admin-token"
+  {{- if .Values.confidentialPersistence.caCertKey }}
+  AKASH_CC_PERSISTENCE_KBS_CA_FILE: "/etc/akash-provider/confidential-persistence/ca.crt"
+  {{- end }}
+  {{- end }}

@@ -319,6 +319,11 @@ spec:
               mountPath: /config
             - name: home
               mountPath: "{{ .Values.home }}"
+            {{- if .Values.confidentialPersistence.enabled }}
+            - name: confidential-persistence
+              mountPath: /etc/akash-provider/confidential-persistence
+              readOnly: true
+            {{- end }}
             {{- if and .Values.letsEncrypt.providers.googleCloud (index .Values.letsEncrypt.providers.googleCloud "enabled" | default false) }}
             - name: gcp-service-account
               mountPath: /etc/gcp
@@ -339,6 +344,21 @@ spec:
         - name: home
           persistentVolumeClaim:
             claimName: {{ include "provider.fullname" . }}-home
+        {{- if .Values.confidentialPersistence.enabled }}
+        - name: confidential-persistence
+          secret:
+            secretName: {{ required "confidentialPersistence.existingSecret is required when confidential persistence is enabled" .Values.confidentialPersistence.existingSecret | quote }}
+            defaultMode: 0400
+            items:
+              - key: {{ required "confidentialPersistence.masterKeyKey is required when confidential persistence is enabled" .Values.confidentialPersistence.masterKeyKey | quote }}
+                path: master-key
+              - key: {{ required "confidentialPersistence.adminTokenKey is required when confidential persistence is enabled" .Values.confidentialPersistence.adminTokenKey | quote }}
+                path: admin-token
+              {{- if .Values.confidentialPersistence.caCertKey }}
+              - key: {{ .Values.confidentialPersistence.caCertKey | quote }}
+                path: ca.crt
+              {{- end }}
+        {{- end }}
         {{- if and .Values.letsEncrypt.providers.googleCloud (index .Values.letsEncrypt.providers.googleCloud "enabled" | default false) }}
         - name: gcp-service-account
           secret:

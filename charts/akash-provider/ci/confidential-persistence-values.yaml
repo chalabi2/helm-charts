@@ -1,0 +1,12 @@
+domain: provider.example.test
+from: akash1example
+key: provider
+keysecret: test-only
+
+confidentialPersistence:
+  enabled: true
+  kbsURL: https://kbs.example.test
+  existingSecret: provider-confidential-persistence
+  masterKeyKey: master-key
+  adminTokenKey: admin-token
+  caCertKey: ca.crt

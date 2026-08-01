@@ -124,6 +124,26 @@ attestation:
     # with the provider image tag.
     tag: ""
 
+# Confidential persistent storage for TEE workloads. Requires a Provider image
+# with the cc-persistence flags. The Provider derives a stable per-volume DEK
+# and provisions it into Trustee before creating a confidential workload.
+# Disabled by default.
+confidentialPersistence:
+  enabled: false
+  # Public HTTPS URL that guests and the Provider use to reach Trustee/KBS.
+  kbsURL: ""
+  # Existing Secret in the Provider namespace. The chart deliberately does not
+  # create or rotate this secret. Losing the master key makes existing volumes
+  # unrecoverable.
+  existingSecret: ""
+  # Secret key containing exactly 32 raw bytes. Prefer kubectl --from-file; if
+  # authoring Secret.data directly, base64-encode those exact bytes once.
+  masterKeyKey: master-key
+  # Secret key containing a KBS admin Bearer JWT restricted to resource writes.
+  adminTokenKey: admin-token
+  # Optional Secret key containing the PEM CA bundle for a private KBS CA.
+  caCertKey: ""
+
 #  monitor
 ##
 
