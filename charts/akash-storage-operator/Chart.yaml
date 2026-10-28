@@ -1,6 +1,6 @@
 apiVersion: v2
 name: akash-storage-operator
-description: An operator managing AEP-87 first-class volumes (required for volume-market participation)
+description: An operator managing first-class volumes (required for volume-market participation)
 
 # A chart can be either an 'application' or a 'library' chart.
 #
