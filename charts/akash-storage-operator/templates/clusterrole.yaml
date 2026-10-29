@@ -10,83 +10,47 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/part-of: provider
 rules:
-  # the PV choreography: holder/attach PVC creation and claimRef rewrites
+  # the PV choreography: identity labels, claimRef rewrites, the reclaim
+  # policy flip and the PV's removal at GC
   - apiGroups:
       - ''
     resources:
       - persistentvolumes
-      - persistentvolumeclaims
     verbs:
-      - create
-      - delete
       - get
-      - list
-      - watch
       - update
-      - patch
+      - delete
+  # holder and attach claims: created, grown by a resize, removed
   - apiGroups:
       - ''
     resources:
-      - namespaces
-      - events
+      - persistentvolumeclaims
     verbs:
       - get
+      - create
+      - patch
+      - delete
+  # --provision-node-hint: the ready node carrying the volume's class
+  - apiGroups:
+      - ''
+    resources:
+      - nodes
+    verbs:
       - list
-      - watch
-  # rook-ceph-tools exec for the replication drivers (rbd export/diff)
+  # the operator's own pod, for its REST port
   - apiGroups:
       - ''
     resources:
       - pods
     verbs:
       - get
-      - list
-      - watch
-  - apiGroups:
-      - ''
-    resources:
-      - pods/exec
-    verbs:
-      - create
-      - get
-  - apiGroups:
-      - storage.k8s.io
-    resources:
-      - storageclasses
-    verbs:
-      - get
-      - list
-      - watch
-  # snapshot plumbing for stream-export replication
-  - apiGroups:
-      - snapshot.storage.k8s.io
-    resources:
-      - volumesnapshots
-      - volumesnapshotcontents
-      - volumesnapshotclasses
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - watch
   - apiGroups:
       - akash.network
     resources:
       - volumes
     verbs:
-      - create
-      - delete
       - get
       - list
       - watch
       - update
-      - patch
-  - apiGroups:
-      - akash.network
-    resources:
-      - manifests
-    verbs:
-      - get
-      - list
-      - watch
+      - delete
